@@ -20,7 +20,13 @@ void server_start(const config config)
 
 	if (bind(socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) <
 	    0) {
-		perror("Bind failed.");
+		char *err_string = (char *)malloc(64);
+		sprintf(err_string, "Error: Server failed to bind to port %d",
+			config.port);
+		perror(err_string);
+		free(err_string);
+		
+		fprintf(stderr, "Info: Make sure to run as root for ports < 1024\n");
 		exit(EXIT_FAILURE);
 	}
 
