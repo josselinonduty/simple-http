@@ -51,8 +51,8 @@ lint: $(SRC)
 	@rm -f ./$(SRCDIR)/*.c~ ./$(SRCDIR)/**/*.c~
 .PHONY: lint
 
-debug: $(EXEC)
-	@$(DEBUG) -s $(DFLAGS) $(TEST) 2>&1 | tee $(BINDIR)/$(TESTDIR)/.valgrind.log
+debug: $(BINDIR)/$(EXEC)
+	@$(DEBUG) -s $(DFLAGS) $(BINDIR)/$(EXEC) 2>&1 | tee $(BINDIR)/.valgrind.log
 .PHONY: debug
 
 debug/headless: $(EXEC)
