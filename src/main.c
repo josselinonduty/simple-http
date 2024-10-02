@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "cli.h"
+#include "server.h"
 
 int main(int argc, char *argv[])
 {
@@ -21,6 +22,6 @@ int main(int argc, char *argv[])
 	printf("Port: %d\n", config.port);
 	printf("Dir: %s\n", config.vroot);
 
-
+	server_start(config);
 	return 0;
 }
