@@ -5,15 +5,16 @@
 
 #include "cli.h"
 
-static struct option cli_longopts[5] = {
-	{"config", required_argument, 0, 'c'},
-	{"directory", required_argument, 0, 'd'},
-	{"origin", required_argument, 0, 'o'},
-	{"port", required_argument, 0, 'p'},
+static struct option cli_longopts[6] = {
+	{"config", optional_argument, 0, 'c'},
+	{"directory", optional_argument, 0, 'd'},
+	{"origin", optional_argument, 0, 'o'},
+	{"port", optional_argument, 0, 'p'},
+	{"max-connections", optional_argument, 0, 'm'},
 	{0, 0, 0, 0},
 };
 
-static char *cli_shortopts = "c:d:o:p:";
+static char *cli_shortopts = "c:d:o:p:m:";
 
 typedef struct seen_t {
 	int memsize;
@@ -71,6 +72,7 @@ cli_error cli_config_reset(config *config)
 	config->allow = 0;
 	config->port = 80;
 	config->vroot = NULL;
+	config->max_connections = SOMAXCONN;
 	return cli_ok;
 }
 
@@ -93,6 +95,11 @@ cli_error cli_config_check(config *config)
 
 	if (config->vroot == NULL) {
 		fprintf(stderr, "Error: Missing directory\n");
+		return cli_config_error;
+	}
+
+	if (config->max_connections < 1 || config->max_connections > SOMAXCONN) {
+		fprintf(stderr, "Error: Invalid max connections\n");
 		return cli_config_error;
 	}
 
@@ -153,6 +160,7 @@ cli_error cli_load_from_args(int argc, char **argv, config *config)
 			return cli_err;
 		}
 
+		char *endptr;
 		switch (c) {
 		case 'c':
 			cli_err = cli_load_from_conf(optarg, config);
@@ -162,7 +170,7 @@ cli_error cli_load_from_args(int argc, char **argv, config *config)
 
 		case 'p':
 			;
-			char *endptr = NULL;
+			endptr = NULL;
 			config->port = strtoul(optarg, &endptr, 10);
 
 			if (*endptr != '\0') {
@@ -181,6 +189,19 @@ cli_error cli_load_from_args(int argc, char **argv, config *config)
 			if (inet_pton(AF_INET, optarg, &(config->allow)) != 1) {
 				fprintf(stderr,
 					"Error: Invalid ip address '%s'\n",
+					optarg);
+				return cli_conversion_error;
+			}
+			break;
+
+		case 'm':
+			;
+			endptr = NULL;
+			config->max_connections = strtoul(optarg, &endptr, 10);
+
+			if (*endptr != '\0') {
+				fprintf(stderr,
+					"Error: Invalid max connections '%s'\n",
 					optarg);
 				return cli_conversion_error;
 			}
