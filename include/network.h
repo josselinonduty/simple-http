@@ -3,9 +3,9 @@
 
 #include <stdio.h>
 
-typedef int Socket;
+typedef int socket_t;
 
-Socket socket_create(void);
-void socket_destroy(Socket *socket);
+int socket_create(socket_t *sockd);
+int socket_destroy(socket_t *sockd);
 
 #endif

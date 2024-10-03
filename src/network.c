@@ -1,21 +1,26 @@
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "network.h"
 
-Socket socket_create()
+int socket_create(socket_t *sockd)
 {
-	Socket sockd;
+	int err = socket(AF_INET, SOCK_STREAM, 0);
+	if (err < 0)
+		return err;
 
-	if ((sockd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("Socket creation failed.");
-		exit(EXIT_FAILURE);
-	}
-
-	return sockd;
+	*sockd = err;
+	return 0;
 }
 
-void socket_destroy(Socket *socket)
+int socket_destroy(socket_t *sockd)
 {
+	int err = close(*sockd);
+	if (err < 0)
+		return err;
+
+	return 0;
 }
