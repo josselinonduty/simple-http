@@ -6,37 +6,7 @@
 #include <string.h>
 
 #include "conf.h"
-
-#ifndef getline
-ssize_t getline(char **lineptr, size_t *memsize, FILE *stream)
-{
-	*memsize = 64;
-	*lineptr = malloc(*memsize);
-	if (NULL == *lineptr)
-		return -1;
-
-	size_t charsize = 0;	// for null terminator
-
-	char c;
-	while ((c = fgetc(stream)) != EOF) {
-		if (charsize >= *memsize) {
-			*memsize *= 2;
-			*lineptr = realloc(*lineptr, *memsize);
-			if (NULL == *lineptr)
-				return -1;
-		}
-
-		if (c == '\n')
-			break;
-		(*lineptr)[charsize++] = c;
-	}
-
-	(*lineptr)[charsize] = '\0';
-	return charsize;
-}
-#endif
-
-const char *conf_regex = "^([a-zA-Z][a-zA-Z_]*)\\s*=\\s*([^=\\s]+)$";
+#include "utils.h"
 
 conf_error conf_match_arg(const char *line, char *arg, char *value)
 {
@@ -44,16 +14,17 @@ conf_error conf_match_arg(const char *line, char *arg, char *value)
 	regmatch_t matches[3];
 	int err;
 
-	err = regcomp(&regex, conf_regex, REG_EXTENDED);
-	if (err != 0) {
-		return CONF_MALFORMED_ERROR;
-	}
-
-	err = regexec(&regex, line, 3, matches, 0);
+	err =
+	    regcomp(&regex,
+		    "^([a-zA-Z][a-zA-Z_]*)[ \t]*=[ \t]*([^=\r\n]+)\r?\n$",
+		    REG_EXTENDED);
 	if (err != 0)
 		return CONF_MALFORMED_ERROR;
 
+	err = regexec(&regex, line, 3, matches, 0);
 	regfree(&regex);
+	if (err != 0)
+		return CONF_MALFORMED_ERROR;
 
 	if (matches[1].rm_so == -1 || matches[2].rm_so == -1)
 		return CONF_MALFORMED_ERROR;
@@ -69,21 +40,23 @@ conf_error conf_match_arg(const char *line, char *arg, char *value)
 	return CONF_OK;
 }
 
-conf_error conf_match_comment(const char *line)
+int conf_test_regex(const char *line, const char *pattern)
 {
 	regex_t regex;
 	regmatch_t matches[1];
 	int err;
 
-	err = regcomp(&regex, "^\\s*(#.*)?$", REG_EXTENDED);
+	err = regcomp(&regex, pattern, REG_EXTENDED);
 	if (err != 0)
-		return CONF_MALFORMED_ERROR;
+		return -1;
 
 	err = regexec(&regex, line, 1, matches, 0);
-	if (err != 0)
-		return 0;
-
 	regfree(&regex);
+	if (err != 0) {
+		if (err == REG_NOMATCH)
+			return 0;
+		return -1;
+	}
 	return 1;
 }
 
@@ -97,17 +70,30 @@ conf_error conf_load(const char *conf_path, config *config)
 
 	size_t memsize = 0, charsize;
 	char *line = NULL;
-	while ((charsize = getline(&line, &memsize, file)) != -1) {
+	while ((charsize = fgetline(&line, &memsize, file)) != -1) {
 		if (charsize == 0)
 			continue;
 
-		int matches = conf_match_comment(line);
-		if (matches < CONF_OK) {
+		int should_ignore;
+		// Test for empty line
+		should_ignore = conf_test_regex(line, "^[ \t]*\r?\n$");
+		if (should_ignore < 0) {
 			free(line);
 			fclose(file);
-			return err;
+			return should_ignore;
 		}
-		if (matches == 1)
+		if (should_ignore == 1)
+			continue;
+
+		// Test for comment
+		should_ignore =
+		    conf_test_regex(line, "^[ \t]*(#[^\r\n]*)\r?\n$");
+		if (should_ignore < 0) {
+			free(line);
+			fclose(file);
+			return should_ignore;
+		}
+		if (should_ignore == 1)
 			continue;
 
 		char *arg = malloc(charsize);
@@ -142,6 +128,7 @@ conf_error conf_load(const char *conf_path, config *config)
 
 				free(arg);
 				free(value);
+				free(line);
 				fclose(file);
 				return CONF_MALFORMED_ERROR;
 			}
@@ -157,6 +144,7 @@ conf_error conf_load(const char *conf_path, config *config)
 
 				free(arg);
 				free(value);
+				free(line);
 				fclose(file);
 				return CONF_MALFORMED_ERROR;
 			}
@@ -173,6 +161,7 @@ conf_error conf_load(const char *conf_path, config *config)
 
 				free(arg);
 				free(value);
+				free(line);
 				fclose(file);
 				return CONF_MALFORMED_ERROR;
 			}
