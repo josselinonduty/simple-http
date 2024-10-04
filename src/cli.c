@@ -20,7 +20,7 @@ static char *cli_shortopts = "c:d:o:p:m:";
 
 cli_error cli_config_reset(config *config)
 {
-	config->allow = 0;
+	config->host = 0;
 	config->port = 8080;
 	config->vroot = "./www";
 	config->max_connections = SOMAXCONN;
@@ -39,8 +39,8 @@ cli_error cli_config_check(config *config)
 		return cli_config_error;
 	}
 
-	if (config->allow < 0) {
-		fprintf(stderr, "Error: Invalid allowed ip address\n");
+	if (config->host < 0) {
+		fprintf(stderr, "Error: Invalid host address\n");
 		return cli_config_error;
 	}
 
@@ -133,9 +133,9 @@ cli_error cli_load_from_args(int argc, char **argv, config *config)
 			break;
 
 		case 'o':
-			if (inet_pton(AF_INET, optarg, &(config->allow)) != 1) {
+			if (inet_pton(AF_INET, optarg, &(config->host)) != 1) {
 				fprintf(stderr,
-					"Error: Invalid ip address '%s'\n",
+					"Error: Invalid host address '%s'\n",
 					optarg);
 				return cli_conversion_error;
 			}

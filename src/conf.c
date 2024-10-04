@@ -71,8 +71,8 @@ conf_error conf_load(const char *conf_path, config *config)
 	size_t memsize = 0, charsize;
 	char *line = NULL;
 	while ((charsize = fgetline(&line, &memsize, file)) != -1) {
-		if (charsize == 0)
-			continue;
+		if (charsize <= 0)
+			break;
 
 		int should_ignore;
 		// Test for empty line
@@ -120,10 +120,10 @@ conf_error conf_load(const char *conf_path, config *config)
 		}
 
 		char *endptr = NULL;
-		if (strcmp(arg, "ALLOW") == 0) {
-			if (inet_pton(AF_INET, value, &(config->allow)) != 1) {
+		if (strcmp(arg, "HOST") == 0) {
+			if (inet_pton(AF_INET, value, &(config->host)) != 1) {
 				fprintf(stderr,
-					"Error: Invalid ip address '%s'\n",
+					"Error: Invalid host address '%s'\n",
 					value);
 
 				free(arg);
@@ -132,7 +132,6 @@ conf_error conf_load(const char *conf_path, config *config)
 				fclose(file);
 				return CONF_MALFORMED_ERROR;
 			}
-			break;
 		} else if (strcmp(arg, "PORT") == 0) {
 			endptr = NULL;
 			config->port = strtoul(value, &endptr, 10);
@@ -150,7 +149,7 @@ conf_error conf_load(const char *conf_path, config *config)
 			}
 		} else if (strcmp(arg, "VROOT") == 0) {
 			config->vroot = value;
-		} else if (strcmp(arg, "MAX_CONNECTION") == 0) {
+		} else if (strcmp(arg, "MAX_CONNECTIONS") == 0) {
 			endptr = NULL;
 			config->max_connections = strtoul(value, &endptr, 10);
 

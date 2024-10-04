@@ -3,7 +3,7 @@
 
 typedef struct config
 {
-    int allow;
+    int host;
     int port;
     char *vroot;
     int max_connections;

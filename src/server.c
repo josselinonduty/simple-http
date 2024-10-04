@@ -21,7 +21,7 @@ int server_init(server_t *server)
 		return err;
 
 	server->server_addr.sin_family = AF_INET;
-	server->server_addr.sin_addr.s_addr = server->config.allow;
+	server->server_addr.sin_addr.s_addr = server->config.host;
 	server->server_addr.sin_port = htons(server->config.port);
 
 	err = setsockopt(server->socket, SOL_SOCKET, SO_REUSEADDR, &(int) { 1 },
@@ -48,7 +48,7 @@ int server_init(server_t *server)
 	if (err < 0)
 		return err;
 	else
-		fprintf(stdout, "Info: Server running on port %d\n",
+		fprintf(stderr, "Info: Server running on port %d\n",
 			ntohs(server->server_addr.sin_port));
 
 	err = listen(server->socket, server->config.max_connections);
