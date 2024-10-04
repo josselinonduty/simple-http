@@ -95,6 +95,8 @@ int server_handle_connection(const client_t client)
 			printf("%d ", (int)buffer[i]);
 		}
 		printf("\n");
+
+		memset(buffer, 0, 1024);
 	}
 	free(buffer);
 
@@ -137,9 +139,11 @@ int server_start(server_t *server)
 				return err;
 			break;	// Child process should exit
 		} else {
+			printf("Child process %d created\n", pid);
 			err = server_close_connection(client);
 			if (err < 0)
 				return err;
+			printf("Child process %d closed\n", pid);
 		}
 	}
 
