@@ -21,8 +21,8 @@ static char *cli_shortopts = "c:d:o:p:m:";
 cli_error cli_config_reset(config *config)
 {
 	config->allow = 0;
-	config->port = 80;
-	config->vroot = NULL;
+	config->port = 8080;
+	config->vroot = "./www";
 	config->max_connections = SOMAXCONN;
 	return cli_ok;
 }
