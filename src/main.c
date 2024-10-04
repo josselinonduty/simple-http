@@ -6,22 +6,27 @@
 
 int main(int argc, char *argv[])
 {
-	cli_error cli_err;
+	int err;
 
 	config config;
-	cli_err = cli_load(argc, argv, &config);
-	if (cli_err != cli_ok) {
+	err = cli_load(argc, argv, &config);
+	if (err < 0) {
 		fprintf(stderr, "Error: Failed to load configuration\n");
-		return 1;
+		return err;
 	}
 
-	printf("Configuration loaded:\n");
-	char ip[INET_ADDRSTRLEN];
-	inet_ntop(AF_INET, &config.allow, ip, INET_ADDRSTRLEN);
-	printf("Allow: %s\n", ip);
-	printf("Port: %d\n", config.port);
-	printf("Dir: %s\n", config.vroot);
+	server_t server = {.config = config };
+	err = server_start(&server);
+	if (err < 0) {
+		fprintf(stderr, "Error: Failed to start server\n");
+		return err;
+	}
 
-	server_start(config);
+	err = server_stop(server);
+	if (err < 0) {
+		fprintf(stderr, "Error: Failed to stop server\n");
+		return err;
+	}
+
 	return 0;
 }
