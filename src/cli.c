@@ -10,13 +10,13 @@
 static struct option cli_longopts[6] = {
 	{"config", optional_argument, 0, 'c'},
 	{"directory", optional_argument, 0, 'd'},
-	{"origin", optional_argument, 0, 'o'},
+	{"host", optional_argument, 0, 'h'},
 	{"port", optional_argument, 0, 'p'},
 	{"max-connections", optional_argument, 0, 'm'},
 	{0, 0, 0, 0},
 };
 
-static char *cli_shortopts = "c:d:o:p:m:";
+static char *cli_shortopts = "c:d:h:p:m:";
 
 cli_error cli_config_reset(config *config)
 {
@@ -132,7 +132,7 @@ cli_error cli_load_from_args(int argc, char **argv, config *config)
 			config->vroot = optarg;
 			break;
 
-		case 'o':
+		case 'h':
 			if (inet_pton(AF_INET, optarg, &(config->host)) != 1) {
 				fprintf(stderr,
 					"Error: Invalid host address '%s'\n",
