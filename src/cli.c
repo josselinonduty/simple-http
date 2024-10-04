@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "cli.h"
+#include "multiset.h"
 
 static struct option cli_longopts[6] = {
 	{"config", optional_argument, 0, 'c'},
@@ -15,57 +16,6 @@ static struct option cli_longopts[6] = {
 };
 
 static char *cli_shortopts = "c:d:o:p:m:";
-
-typedef struct seen_t {
-	int memsize;
-	char *seen;
-	int size;
-} seen_t;
-
-cli_error cli_seen_create(seen_t *seen)
-{
-	seen->memsize = 16;
-	seen->seen = (char *)malloc(seen->memsize);
-	if (seen->seen == NULL)
-		return cli_args_memory;
-
-	seen->size = 0;
-	return cli_ok;
-}
-
-cli_error cli_seen_put(seen_t *seen, char c)
-{
-	if (seen->size == seen->memsize) {
-		seen->memsize += 16;
-		seen->seen = (char *)realloc(seen->seen, seen->memsize);
-
-		if (seen->seen == NULL)
-			return cli_args_memory;
-	}
-
-	seen->seen[seen->size] = c;
-	seen->size++;
-	return cli_ok;
-}
-
-cli_error cli_seen_has(seen_t *seen, char c)
-{
-	for (int i = 0; i < seen->size; i++) {
-		if (seen->seen[i] == c)
-			return cli_args_duplicate;
-	}
-
-	return cli_ok;
-}
-
-cli_error cli_seen_ensure_unique(seen_t *seen, char c)
-{
-	if (cli_seen_has(seen, c) == cli_args_duplicate)
-		return cli_args_duplicate;
-
-	cli_seen_put(seen, c);
-	return cli_ok;
-}
 
 cli_error cli_config_reset(config *config)
 {
@@ -127,13 +77,14 @@ cli_error cli_load_from_args(int argc, char **argv, config *config)
 {
 	cli_config_reset(config);
 
+	char_multiset_t uset;
+	multiset_error uset_err;
+
+	uset_err = char_multiset_create(&uset);
+	if (uset_err < 0)
+		return uset_err;
+
 	int option_index = 0;
-	seen_t seen;
-
-	cli_error cli_err = cli_seen_create(&seen);
-	if (cli_err != cli_ok)
-		return cli_err;
-
 	while (1) {
 		int c = getopt_long(argc, argv, cli_shortopts, cli_longopts,
 				    &option_index);
@@ -141,15 +92,15 @@ cli_error cli_load_from_args(int argc, char **argv, config *config)
 		if (c == -1)
 			break;
 
-		cli_err = cli_seen_ensure_unique(&seen, c);
-		if (cli_err != cli_ok) {
-			switch (cli_err) {
-			case cli_args_duplicate:
+		uset_err = char_multiset_put(&uset, c);
+		if (uset_err != MULTISET_OK) {
+			switch (uset_err) {
+			case MULTISET_DUPLICATE_ERROR:
 				fprintf(stderr,
 					"Error: Duplicate option '%c'\n", c);
 				break;
 
-			case cli_args_memory:
+			case MULTISET_MEMORY_ERROR:
 				fprintf(stderr, "Error: Memory error\n");
 				break;
 
@@ -157,9 +108,10 @@ cli_error cli_load_from_args(int argc, char **argv, config *config)
 				fprintf(stderr, "Error: Unknown error\n");
 				break;
 			}
-			return cli_err;
+			return uset_err;
 		}
 
+		cli_error cli_err;
 		char *endptr;
 		switch (c) {
 		case 'c':
