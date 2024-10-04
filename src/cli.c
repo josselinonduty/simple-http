@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "cli.h"
+#include "conf.h"
 #include "multiset.h"
 
 static struct option cli_longopts[6] = {
@@ -60,16 +61,12 @@ cli_error cli_load_from_conf(const char *path, config *config)
 {
 	cli_config_reset(config);
 
-	FILE *fconf = fopen(path, "r");
-	if (fconf == NULL)
-		return cli_config_file_error;
+	conf_error conf_err;
+	conf_err = conf_load(path, config);
+	if (conf_err != CONF_OK) {
+		return cli_config_file_malformed;
+	}
 
-	// TODO: Parse configuration file
-	// config->allow = 1;
-	// config->port = 8080;
-	// config->vroot = "./";
-
-	fclose(fconf);
 	return cli_ok;
 }
 
@@ -116,9 +113,7 @@ cli_error cli_load_from_args(int argc, char **argv, config *config)
 		switch (c) {
 		case 'c':
 			cli_err = cli_load_from_conf(optarg, config);
-			if (cli_err != cli_ok)
-				return cli_err;
-			break;
+			return cli_err;
 
 		case 'p':
 			;

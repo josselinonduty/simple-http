@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 
 #include "cli.h"
+#include "conf.h"
 #include "network.h"
 #include "server.h"
 

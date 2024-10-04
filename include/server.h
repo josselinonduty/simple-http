@@ -4,7 +4,7 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 
-#include "cli.h"
+#include "conf.h"
 #include "network.h"
 
 typedef struct server_t {
