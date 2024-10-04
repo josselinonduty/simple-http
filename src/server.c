@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -117,6 +118,7 @@ int server_start(server_t *server)
 	if (err < 0)
 		return err;
 
+	signal(SIGCHLD, SIG_IGN);
 	while (1) {
 		client_t client;
 
@@ -124,13 +126,19 @@ int server_start(server_t *server)
 		if (err < 0)
 			return err;
 
-		err = server_handle_connection(client);
-		if (err < 0)
-			return err;
+		if (fork() == 0) {
+			err = server_handle_connection(client);
+			if (err < 0)
+				return err;
 
-		err = server_close_connection(client);
-		if (err < 0)
-			return err;
+			err = server_close_connection(client);
+			if (err < 0)
+				return err;
+		} else {
+			err = server_close_connection(client);
+			if (err < 0)
+				return err;
+		}
 	}
 
 	return 0;
