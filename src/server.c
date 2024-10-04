@@ -126,7 +126,8 @@ int server_start(server_t *server)
 		if (err < 0)
 			return err;
 
-		if (fork() == 0) {
+		int pid = fork();
+		if (pid == 0) {
 			err = server_handle_connection(client);
 			if (err < 0)
 				return err;
@@ -134,6 +135,7 @@ int server_start(server_t *server)
 			err = server_close_connection(client);
 			if (err < 0)
 				return err;
+			break;	// Child process should exit
 		} else {
 			err = server_close_connection(client);
 			if (err < 0)
