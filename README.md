@@ -5,7 +5,7 @@ _A simple HTTP server implementation in C_
 ## Usage
 
 ```bash
-simple-http [-p <port>] [-d <directory>] [-h <host>] [-c <config file>]
+simple-http [-c <config file>] [-d <directory>] [-h <host>] [-p <port>] [-t <timeout]
 ```
 
 > By default, the server listens on host `0.0.0.0` port `80` and serves files from `./www`
@@ -18,6 +18,7 @@ simple-http [-p <port>] [-d <directory>] [-h <host>] [-c <config file>]
 - `-d <directory>`: Directory to serve files from (default: `./www`)
 - `-h <host>`: Host to listen on (default: `0.0.0.0`)
 - `-p <port>`: Port to listen on (default: `80`)
+- `-t <timeout>`: Timeout in milliseconds (default: `0`, no timeout)
 
 ## Building
 

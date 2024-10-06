@@ -7,16 +7,17 @@
 #include "conf.h"
 #include "multiset.h"
 
-static struct option cli_longopts[6] = {
+static struct option cli_longopts[7] = {
 	{"config", optional_argument, 0, 'c'},
 	{"directory", optional_argument, 0, 'd'},
 	{"host", optional_argument, 0, 'h'},
 	{"port", optional_argument, 0, 'p'},
 	{"max-connections", optional_argument, 0, 'm'},
+	{"timeout", optional_argument, 0, 't'},
 	{0, 0, 0, 0},
 };
 
-static char *cli_shortopts = "c:d:h:p:m:";
+static char *cli_shortopts = "c:d:h:p:m:t:";
 
 cli_error cli_config_reset(config *config)
 {
@@ -24,12 +25,8 @@ cli_error cli_config_reset(config *config)
 	config->port = 8080;
 	config->vroot = "./www";
 	config->max_connections = SOMAXCONN;
+	config->request_timeout = 0;	// no timeout
 	return cli_ok;
-}
-
-int cli_config_is_default(config *config)
-{
-	return config->vroot == NULL;
 }
 
 cli_error cli_config_check(config *config)
@@ -54,6 +51,11 @@ cli_error cli_config_check(config *config)
 		return cli_config_error;
 	}
 
+	if (config->request_timeout < 0) {
+		fprintf(stderr, "Error: Invalid request timeout\n");
+		return cli_config_error;
+	}
+
 	return cli_ok;
 }
 
@@ -63,11 +65,13 @@ cli_error cli_load_from_conf(const char *path, config *config)
 
 	conf_error conf_err;
 	conf_err = conf_load(path, config);
-	if (conf_err != CONF_OK) {
+	if (conf_err == CONF_MALFORMED_ERROR)
 		return cli_config_file_malformed;
-	}
 
-	return cli_ok;
+	if (conf_err == CONF_OK)
+		return cli_ok;
+
+	return cli_config_file_error;
 }
 
 cli_error cli_load_from_args(int argc, char **argv, config *config)
@@ -154,6 +158,19 @@ cli_error cli_load_from_args(int argc, char **argv, config *config)
 			}
 			break;
 
+		case 't':
+			;
+			endptr = NULL;
+			config->request_timeout = strtoul(optarg, &endptr, 10);
+
+			if (*endptr != '\0') {
+				fprintf(stderr,
+					"Error: Invalid request timeout '%s'\n",
+					optarg);
+				return cli_conversion_error;
+			}
+			break;
+
 		default:
 			fprintf(stderr, "Warning: Unknown option\n");
 			break;
@@ -184,46 +201,38 @@ cli_error cli_load(int argc, char **argv, config *config)
 
 		if (cli_err != cli_ok)
 			return cli_err;
+		return cli_config_check(config);
 	}
 
-	if (cli_config_is_default(config)) {
-		cli_err =
-		    cli_load_from_conf("/usr/local/etc/simple-http.conf",
-				       config);
-
-		if (cli_err == cli_config_file_malformed) {
-			fprintf(stderr,
-				"Error: Failed to load from configuration file (%s)\n",
-				"/usr/local/etc/simple-http.conf");
-			return cli_err;
-		}
-		if (cli_err == cli_ok) {
-			printf("Configuration loaded from %s\n",
-			       "/usr/local/etc/simple-http.conf");
-		}
-	}
-
-	if (cli_config_is_default(config)) {
-		cli_err = cli_load_from_conf("/etc/simple-http.conf", config);
-
-		if (cli_err == cli_config_file_malformed) {
-			fprintf(stderr,
-				"Error: Failed to load from configuration file (%s)\n",
-				"/etc/simple-http.conf");
-			return cli_err;
-		}
-		if (cli_err == cli_ok) {
-			printf("Configuration loaded from %s\n",
-			       "/etc/simple-http.conf");
-		}
-	}
-
-	if (cli_config_is_default(config)) {
+	cli_err = cli_load_from_conf("/usr/local/etc/simple-http.conf", config);
+	if (cli_err == cli_config_file_malformed) {
 		fprintf(stderr,
-			"Error: No configuration file was found (tried /etc/simple-http.conf and /usr/local/etc/simple-http.conf)\n");
-		return cli_config_file_error;
+			"Error: Tried to load '/usr/local/etc/simple-http.conf' but configuration is malformed\n");
+		return cli_err;
+	}
+	if (cli_err == cli_ok) {
+		fprintf(stderr,
+			"Info: Configuration loaded from '/usr/local/etc/simple-http.conf'\n");
+		return cli_config_check(config);
+	}
+
+	cli_err = cli_load_from_conf("/etc/simple-http.conf", config);
+	if (cli_err == cli_config_file_malformed) {
+		fprintf(stderr,
+			"Error: Tried to load '/etc/simple-http.conf' but configuration is malformed\n");
+		return cli_err;
+	}
+	if (cli_err == cli_ok) {
+		fprintf(stderr,
+			"Info: Configuration loaded from '/etc/simple-http.conf'\n");
+		return cli_config_check(config);
 	}
 
 	cli_err = cli_config_check(config);
-	return cli_err;
+	if (cli_err == cli_ok) {
+		fprintf(stderr,
+			"Info: Using default (built-in) configuration\n");
+		return cli_ok;
+	}
+	return -1;
 }

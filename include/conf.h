@@ -7,6 +7,7 @@ typedef struct config
     int port;
     char *vroot;
     int max_connections;
+    int request_timeout;
 } config;
 
 typedef enum conf_error

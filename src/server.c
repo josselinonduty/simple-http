@@ -3,13 +3,17 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 
 #include "cli.h"
 #include "conf.h"
+#include "http.h"
 #include "network.h"
+#include "rfc1945.h"
 #include "server.h"
 
 int server_init(server_t *server)
@@ -75,30 +79,44 @@ int server_accept_connection(const server_t server, client_t *client)
 	return 0;
 }
 
-int server_handle_connection(const client_t client)
+int server_handle_connection(const server_t server, const client_t client)
 {
+	int err;
 	char *buffer = (char *)malloc(1024);
 	int read_size;
 
-	while ((read_size = read(client.socket, buffer, 1024)) > 0) {
-		if (strcmp(buffer, "exit\r\n") == 0) {
-			break;
-		}
+	fd_set input;
+	FD_ZERO(&input);
+	FD_SET(client.socket, &input);
 
-		if (write(client.socket, buffer, read_size) < 0) {
-			perror("Write failed.");
-			exit(EXIT_FAILURE);
-		}
+	struct timeval timeout;
+	timeout.tv_sec = server.config.request_timeout / 1000;
+	timeout.tv_usec = (server.config.request_timeout % 1000) * 1000;
 
-		printf("Received: ");
-		for (int i = 0; i < read_size; i++) {
-			printf("%d ", (int)buffer[i]);
-		}
-		printf("\n");
+	int ready;
+	if (server.config.request_timeout > 0)
+		ready = select(client.socket + 1, &input, NULL, NULL, &timeout);
+	else
+		ready = select(client.socket + 1, &input, NULL, NULL, NULL);
+	if (ready < 0)
+		return ready;
 
-		memset(buffer, 0, 1024);
+	if (ready == 0)
+		return 0;
+
+	read_size = recv(client.socket, buffer, 1024, 0);
+	if (read_size < 0)
+		return read_size;
+
+	if (strcmp(buffer, "exit\r\n") == 0) {
+		return 0;
 	}
-	free(buffer);
+
+	err =
+	    http_send_body(client, 200, STATUS_TEXT_200,
+			   "Hello, World!");
+	if (err < 0)
+		return err;
 
 	return 0;
 }
@@ -130,7 +148,7 @@ int server_start(server_t *server)
 
 		int pid = fork();
 		if (pid == 0) {
-			err = server_handle_connection(client);
+			err = server_handle_connection(*server, client);
 			if (err < 0)
 				return err;
 
@@ -139,11 +157,9 @@ int server_start(server_t *server)
 				return err;
 			break;	// Child process should exit
 		} else {
-			printf("Child process %d created\n", pid);
 			err = server_close_connection(client);
 			if (err < 0)
 				return err;
-			printf("Child process %d closed\n", pid);
 		}
 	}
 
