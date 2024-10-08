@@ -26,7 +26,7 @@ int http_send_full(const client_t client, const int status_code, char *message,
 
 	long response_length = 0;
 	response_length +=
-	    strlen(HTTP_VERSION) + strlen(SP) + 3 + strlen(SP) +
+	    strlen(HTTP_VERSION_1_0) + strlen(SP) + 3 + strlen(SP) +
 	    strlen(message);
 	response_length += strlen(EOL);
 	response_length +=
@@ -44,10 +44,10 @@ int http_send_full(const client_t client, const int status_code, char *message,
 		return -1;
 
 	snprintf(response, response_length,
-		 "%s%s%d%s%s%s%s%s%ld%s%s%s%s%s%s%s%s%s", HTTP_VERSION, SP,
+		 "%s%s%d%s%s%s%s%s%ld%s%s%s%s%s%s%s", HTTP_VERSION_1_0, SP,
 		 status_code, SP, message, EOL, "Content-Length:", SP,
 		 content_length, EOL, "Content-Type:", SP, content_type,
-		 EOL, EOL, body, EOL, EOL);
+		 EOL, EOL, body);
 
 	response[response_length] = '\0';
 
