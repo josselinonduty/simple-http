@@ -17,7 +17,7 @@ DFLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes
 SRC=$(wildcard $(SRCDIR)/*.c) $(wildcard $(SRCDIR)/**/*.c)
 OBJ=$(SRC:%.c=%.o)
 CFLAGS=-Wall -pedantic -std=c99 -I$(INCLUDEDIR) -L$(LIBDIR)
-LDFLAGS=-lmagic -lbz2 -llzma -lz
+LDFLAGS=-lmagic
 # ------------ Test configuration ------------
 TEST=$(BINDIR)/$(TESTDIR)/run
 CFLAGSTEST=-Wall -pedantic -std=c99 -I$(INCLUDEDIR) -I$(TESTDIR)/$(INCLUDEDIR)
