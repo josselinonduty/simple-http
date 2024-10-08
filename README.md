@@ -2,20 +2,6 @@
 
 _A simple HTTP server implementation in C_
 
-## Requirements
-
-### Runtime
-
-- Make
-- GCC
-- libmagic (included for easy of use)
-
-### Build
-
-- Make
-- GCC
-- libmagic-dev
-
 ## Usage
 
 ```bash
@@ -35,6 +21,18 @@ simple-http [-c <config file>] [-d <directory>] [-h <host>] [-p <port>] [-t <tim
 - `-t <timeout>`: Timeout in milliseconds (default: `0`, no timeout)
 
 ## Building
+
+First, install the required dependencies:
+
+```bash
+# Debian/Ubuntu
+sudo apt-get install libmagic-dev
+```
+
+> On other systems, you may need to install `libmagic-devel` or `file-devel` instead.
+> Please refer to your package manager's documentation.
+
+Then, build the project:
 
 ```bash
 make
