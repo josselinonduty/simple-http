@@ -2,6 +2,10 @@
 
 _A simple HTTP server implementation in C_
 
+> [!CAUTION]
+>
+> Make sure to have `libmagic` installed on your system before building the project.
+
 ## Usage
 
 ```bash
