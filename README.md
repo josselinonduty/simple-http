@@ -2,6 +2,20 @@
 
 _A simple HTTP server implementation in C_
 
+## Requirements
+
+### Runtime
+
+- Make
+- GCC
+- libmagic (included for easy of use)
+
+### Build
+
+- Make
+- GCC
+- libmagic-dev
+
 ## Usage
 
 ```bash

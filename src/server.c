@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <errno.h>
+#include <magic.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <signal.h>
@@ -112,9 +113,20 @@ int server_handle_connection(const server_t server, const client_t client)
 		return 0;
 	}
 
-	err =
-	    http_send_body(client, 200, STATUS_TEXT_200,
-			   "Hello, World!");
+	char *file_name = (char *)malloc(strlen(buffer) - 2);
+	strncpy(file_name, buffer, strlen(buffer) - 2);
+
+	magic_t mgc = magic_open(MAGIC_MIME);
+	magic_load(mgc, NULL);
+	const char *mime_type = magic_file(mgc, file_name);
+	if (NULL == mime_type)
+		printf("Error: %s", magic_error(mgc));
+	printf("mime: %s\n", mime_type);
+	magic_close(mgc);
+
+	free(file_name);
+
+	err = http_send_body(client, 200, STATUS_TEXT_200, buffer);
 	if (err < 0)
 		return err;
 

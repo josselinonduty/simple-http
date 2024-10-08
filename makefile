@@ -3,6 +3,7 @@ EXEC=simple-http
 BINDIR=bin
 CC=gcc
 DOCSDIR=docs
+LIBDIR=lib
 INCLUDEDIR=include
 SRCDIR=src
 TESTDIR=tests
@@ -15,8 +16,8 @@ DFLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes
 # ------------ Build configuration ------------
 SRC=$(wildcard $(SRCDIR)/*.c) $(wildcard $(SRCDIR)/**/*.c)
 OBJ=$(SRC:%.c=%.o)
-CFLAGS=-Wall -pedantic -std=c99 -I$(INCLUDEDIR)
-LDFLAGS=-lm -lcunit
+CFLAGS=-Wall -pedantic -std=c99 -I$(INCLUDEDIR) -L$(LIBDIR)
+LDFLAGS=-lmagic -lbz2 -llzma -lz
 # ------------ Test configuration ------------
 TEST=$(BINDIR)/$(TESTDIR)/run
 CFLAGSTEST=-Wall -pedantic -std=c99 -I$(INCLUDEDIR) -I$(TESTDIR)/$(INCLUDEDIR)
