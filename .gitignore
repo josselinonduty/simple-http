@@ -2,6 +2,7 @@
 *.c~
 bin/
 docs/
+lib/
 
 .vscode
 *.tmp

@@ -1,3 +1,4 @@
+#include "magic/magic.h"
 #include <stdlib.h>
 #include <string.h>
 

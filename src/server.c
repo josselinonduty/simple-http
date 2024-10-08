@@ -1,6 +1,6 @@
 #include <arpa/inet.h>
 #include <errno.h>
-#include <magic.h>
+#include "magic/magic.h"
 #include <netinet/in.h>
 #include <unistd.h>
 #include <signal.h>
@@ -83,7 +83,6 @@ int server_accept_connection(const server_t server, client_t *client)
 int server_handle_connection(const server_t server, const client_t client)
 {
 	int err;
-	char *buffer = (char *)malloc(1024);
 	int read_size;
 
 	fd_set input;
@@ -103,17 +102,24 @@ int server_handle_connection(const server_t server, const client_t client)
 		return ready;
 
 	if (ready == 0)
+		// http_send(client, 408, "Request Timeout");   // not in RFC1945
 		return 0;
 
-	read_size = recv(client.socket, buffer, 1024, 0);
+	char buffer[BUFFER_SIZE];
+	read_size = recv(client.socket, buffer, BUFFER_SIZE, 0);
 	if (read_size < 0)
 		return read_size;
+
+	// Print each char code
+	for (int i = 0; i < read_size; i++) {
+		printf("%d ", buffer[i]);
+	}
 
 	if (strcmp(buffer, "exit\r\n") == 0) {
 		return 0;
 	}
 
-	char *file_name = (char *)malloc(strlen(buffer) - 2);
+	char file_name[BUFFER_SIZE];
 	strncpy(file_name, buffer, strlen(buffer) - 2);
 
 	magic_t mgc = magic_open(MAGIC_MIME);
@@ -123,8 +129,6 @@ int server_handle_connection(const server_t server, const client_t client)
 		printf("Error: %s", magic_error(mgc));
 	printf("mime: %s\n", mime_type);
 	magic_close(mgc);
-
-	free(file_name);
 
 	err = http_send_body(client, 200, STATUS_TEXT_200, buffer);
 	if (err < 0)
