@@ -70,6 +70,7 @@ build/lib:
 	@bash ./scripts/libmagic.sh build $(LIBDIR)/file
 	@mkdir -p $(LIBDIR)/$(BINDIR)/magic
 	@bash ./scripts/libmagic.sh extract $(LIBDIR)/file $(LIBDIR)/$(BINDIR)/magic
+	@bash ./scripts/libmagic.sh extract-db $(LIBDIR)/file $(BINDIR)
 .PHONY: build/lib
 
 build: $(OBJ)
@@ -101,7 +102,7 @@ clean: clean/build clean/objects clean/exec clean/docs clean/lint clean/debug cl
 .PHONY: clean
 
 clean/build:
-	@rm -f ./$(BINDIR)/$(EXEC)
+	@rm -rf ./$(BINDIR)/*
 
 clean/lib:
 	@bash ./scripts/libmagic.sh clean $(LIBDIR)/file $(LIBDIR)/$(BINDIR)/magic

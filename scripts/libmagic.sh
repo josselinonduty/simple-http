@@ -73,6 +73,41 @@ case $1 in
         cp $2/src/magic.h $3
         ;;
 
+    extract-db)
+        # check if the input path is provided
+        if [ -z $2 ]; then
+            echo "Input directory is not provided"
+            exit 1
+        fi
+
+        # check if the input path exists
+        if [ ! -d $2 ]; then
+            echo "Input directory does not exist"
+            exit 1
+        fi
+
+        # check if the output path is provided
+        if [ -z $3 ]; then
+            echo "Output directory is not provided"
+            exit 1
+        fi
+
+        # check if the output path exists
+        if [ ! -d $3 ]; then
+            echo "Output directory does not exist"
+            exit 1
+        fi
+
+        # ensure files to extract exist
+        if [ ! -f $2/magic/magic.mgc ]; then
+            echo "Error: No files to extract. Try to run build first"
+            exit 1
+        fi
+
+        # extract files
+        cp $2/magic/magic.mgc $3
+        ;;
+
     clean)
         # check if the input path is provided
         if [ -z $2 ]; then
