@@ -97,7 +97,10 @@ $(TESTDIR)/%.o: $(TESTDIR)/%.c
 $(TESTDIR)/%/%.o: $(TESTDIR)/%/%.c
 	$(CC) -o $@ -c $< $(CFLAGSTEST)
 
-clean: clean/build clean/objects clean/exec clean/docs clean/lint clean/debug clean/lib
+clean-all: clean clean/lib
+.PHONY: clean-all
+
+clean: clean/build clean/objects clean/exec clean/docs clean/lint clean/debug
 .PHONY: clean
 
 clean/build:
