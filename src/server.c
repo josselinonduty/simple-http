@@ -82,9 +82,6 @@ int server_accept_connection(const server_t server, client_t *client)
 
 int server_handle_connection(const server_t server, const client_t client)
 {
-	int err;
-	int read_size;
-
 	fd_set input;
 	FD_ZERO(&input);
 	FD_SET(client.socket, &input);
@@ -105,34 +102,68 @@ int server_handle_connection(const server_t server, const client_t client)
 		// http_send(client, 408, "Request Timeout");   // not in RFC1945
 		return 0;
 
-	char buffer[BUFFER_SIZE];
-	read_size = recv(client.socket, buffer, BUFFER_SIZE, 0);
-	if (read_size < 0)
-		return read_size;
+	int err;
 
-	// Print each char code
-	for (int i = 0; i < read_size; i++) {
-		printf("%d ", buffer[i]);
-	}
-
-	if (strcmp(buffer, "exit\r\n") == 0) {
-		return 0;
-	}
-
-	char file_name[BUFFER_SIZE];
-	strncpy(file_name, buffer, strlen(buffer) - 2);
-
-	magic_t mgc = magic_open(MAGIC_MIME);
-	magic_load(mgc, NULL);
-	const char *mime_type = magic_file(mgc, file_name);
-	if (NULL == mime_type)
-		printf("Error: %s", magic_error(mgc));
-	printf("mime: %s\n", mime_type);
-	magic_close(mgc);
-
-	err = http_send_body(client, 200, STATUS_TEXT_200, buffer);
+	http_request_t request;
+	err = http_request_create(client, &request);
 	if (err < 0)
 		return err;
+
+	http_response_t response;
+	http_response_create(&response);
+
+	if (request.major > 1 || (request.major == 1 && request.minor > 1))
+		// http_send(client, 505, "HTTP Version Not Supported");   // not in RFC1945
+		return 0;
+
+	if (strcmp(request.uri, "/") == 0) {
+		http_response_status(&response, 301);
+		cimap_set(response.headers, "Location", "/index.html");
+		goto send_text;
+	}
+
+	if (strstr(request.uri, "..") != NULL) {
+		http_response_status(&response, 400);
+		goto send_text;
+	}
+
+	char vroot_uri[SERVER_BUFFER_SIZE];
+	snprintf(vroot_uri, SERVER_BUFFER_SIZE, "%s%s", server.config.vroot,
+		 request.uri);
+
+	char *content_type = malloc(SERVER_BUFFER_SIZE);
+	if (!content_type)
+		return -1;
+	err = http_content_get(vroot_uri, &content_type);
+
+	if (HTTP_ENTITY_NOT_FOUND == err) {
+		http_response_status(&response, 404);
+		http_response_body(&response, STATUS_TEXT_404);
+	} else if (err < 0) {
+		http_response_status(&response, 500);
+	} else {
+		cimap_set(response.headers, "Content-Type", content_type);
+	}
+	free(content_type);
+
+	if (request.method == HTTP_METHOD_POST) {
+		http_response_status(&response, 501);
+		goto send_text;
+	}
+
+	goto send_file;
+
+ send_text:
+	http_response_send(client, &request, &response);
+	goto cleanup;
+
+ send_file:
+	http_response_send_file(client, &request, &response, vroot_uri);
+	goto cleanup;
+
+ cleanup:
+	http_request_destroy(&request);
+	http_response_destroy(&response);
 
 	return 0;
 }
@@ -149,6 +180,10 @@ int server_close_connection(const client_t client)
 int server_start(server_t *server)
 {
 	int err;
+
+	err = http_content_init();
+	if (err < 0)
+		return err;
 
 	err = server_init(server);
 	if (err < 0)
@@ -184,5 +219,11 @@ int server_start(server_t *server)
 
 int server_stop(const server_t server)
 {
+	int err;
+
+	err = http_content_free();
+	if (err < 0)
+		return err;
+
 	return close(server.socket);
 }
