@@ -137,7 +137,7 @@ int http_response_create(http_response_t *response)
 	response->headers = cimap_create(16, false);
 
 	http_response_status(response, 200);
-	cimap_set(response->headers, "Server", "josselinonduty/simple-http");
+	cimap_set(response->headers, "Server", SERVER_NAME);
 
 	return 0;
 }
