@@ -148,7 +148,7 @@ conf_error conf_load(const char *conf_path, config *config)
 				return CONF_MALFORMED_ERROR;
 			}
 		} else if (strcmp(arg, "VROOT") == 0) {
-			config->vroot = value;
+			config->vroot = strdup(value);
 		} else if (strcmp(arg, "MAX_CONNECTIONS") == 0) {
 			endptr = NULL;
 			config->max_connections = strtoul(value, &endptr, 10);
