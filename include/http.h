@@ -54,8 +54,4 @@ int http_content_init(void);
 int http_content_get(const char *file_name, char **content_type);
 int http_content_free(void);
 
-int http_send(const client_t client, const http_response_t *response);
-int http_send_body(const client_t client, const http_response_t *response);
-int http_send_full(const client_t client, const http_response_t *response);
-
 #endif
