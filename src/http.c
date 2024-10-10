@@ -418,12 +418,14 @@ int http_content_get(const char *file_name, char **content_type)
 		return -1;
 	}
 
-	const char *mime_type = http_content_get_override(file_name);
+	const char *mime_type = magic_file(magic_cookie, file_name);
 	if (NULL == mime_type) {
-		mime_type = magic_file(magic_cookie, file_name);
-		if (NULL == mime_type) {
-			return HTTP_ENTITY_NOT_FOUND;
-		}
+		return HTTP_ENTITY_NOT_FOUND;
+	}
+	if (strcmp(mime_type, "text/plain") == 0) {
+		const char *mime_type_override = http_content_get_override(file_name);
+		if (NULL != mime_type_override)
+			mime_type = mime_type_override;
 	}
 
 	strcpy(*content_type, mime_type);
