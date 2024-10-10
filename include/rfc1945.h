@@ -16,6 +16,7 @@
 #define DQUOTE "\x22"
 #define CRLF "\x0D\x0A"
 #define EOL CRLF
+#define EOBLOCK "\x0D\x0A\x0D\x0A"
 /* ---------------------------------------- */
 
 /* ---------- STATUS_TEXT Code ---------- */
@@ -81,7 +82,8 @@
 
 /* ---------- Miscellaneous ---------- */
 #define SERVER_NAME "josselinonduty/simple-http"
-#define BUFFER_SIZE 8192
+#define SERVER_BUFFER_SIZE 8192
+#define SERVER_BODY_SIZE 4294967295
 /* ----------------------------------- */
 
 #endif
