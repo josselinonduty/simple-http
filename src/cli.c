@@ -204,6 +204,18 @@ cli_error cli_load(int argc, char **argv, config *config)
 		return cli_config_check(config);
 	}
 
+	cli_err = cli_load_from_conf("./etc/simple-http.conf", config);
+	if (cli_err == cli_config_file_malformed) {
+		fprintf(stderr,
+			"Error: Tried to load './etc/simple-http.conf' but configuration is malformed\n");
+		return cli_err;
+	}
+	if (cli_err == cli_ok) {
+		fprintf(stderr,
+			"Info: Configuration loaded from './etc/simple-http.conf'\n");
+		return cli_config_check(config);
+	}
+
 	cli_err = cli_load_from_conf("/usr/local/etc/simple-http.conf", config);
 	if (cli_err == cli_config_file_malformed) {
 		fprintf(stderr,
