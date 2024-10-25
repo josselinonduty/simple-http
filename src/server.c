@@ -1,6 +1,6 @@
 #include <arpa/inet.h>
 #include <errno.h>
-#include "magic/magic.h"
+#include <magic.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <signal.h>

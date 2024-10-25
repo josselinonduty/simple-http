@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <errno.h>
+#include <magic.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -8,7 +9,6 @@
 
 #include "cimap.h"
 #include "http.h"
-#include "magic/magic.h"
 #include "rfc1945.h"
 #include "server.h"
 
@@ -423,7 +423,8 @@ int http_content_get(const char *file_name, char **content_type)
 		return HTTP_ENTITY_NOT_FOUND;
 	}
 	if (strcmp(mime_type, "text/plain") == 0) {
-		const char *mime_type_override = http_content_get_override(file_name);
+		const char *mime_type_override =
+		    http_content_get_override(file_name);
 		if (NULL != mime_type_override)
 			mime_type = mime_type_override;
 	}

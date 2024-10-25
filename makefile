@@ -16,8 +16,8 @@ DFLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes
 # ------------ Build configuration ------------
 SRC=$(wildcard $(SRCDIR)/*.c) $(wildcard $(SRCDIR)/**/*.c)
 OBJ=$(SRC:%.c=%.o)
-CFLAGS=-Wall -pedantic -std=c99 -I$(INCLUDEDIR) -I$(LIBDIR)/$(BINDIR) -L$(LIBDIR)/$(BINDIR)
-LDFLAGS=-l:magic/libmagic.so
+CFLAGS=-Wall -pedantic -std=c99 -I$(INCLUDEDIR)
+LDFLAGS=-lmagic
 # ------------ Test configuration ------------
 TEST=$(BINDIR)/$(TESTDIR)/run
 CFLAGSTEST=-Wall -pedantic -std=c99 -I$(INCLUDEDIR) -I$(TESTDIR)/$(INCLUDEDIR)
@@ -31,7 +31,7 @@ LINTFLAGS=-nbad -bap -nbc -bbo -hnl -br -brs -c33 -cd33 -ncdb -ce -ci4  -cli0 -d
 #               Targets            
 # ---------------------------------
 
-all: build/lib build
+all: build
 .PHONY: all
 
 $(SRCDIR)/%.o: $(SRCDIR)/%.c
@@ -65,13 +65,6 @@ debug/headless: $(EXEC)
 		fi;
 .PHONY: debug/headless
 
-build/lib:
-	@mkdir -p $(LIBDIR)
-	@bash ./scripts/libmagic.sh build $(LIBDIR)/file
-	@mkdir -p $(LIBDIR)/$(BINDIR)/magic
-	@bash ./scripts/libmagic.sh extract $(LIBDIR)/file $(LIBDIR)/$(BINDIR)/magic
-.PHONY: build/lib
-
 build: $(OBJ)
 	@mkdir -p $(BINDIR)
 	@gcc -o $(BINDIR)/${EXEC} $^ $(CFLAGS) $(LDFLAGS)
@@ -97,18 +90,11 @@ $(TESTDIR)/%.o: $(TESTDIR)/%.c
 $(TESTDIR)/%/%.o: $(TESTDIR)/%/%.c
 	$(CC) -o $@ -c $< $(CFLAGSTEST)
 
-clean-all: clean clean/lib
-.PHONY: clean-all
-
 clean: clean/build clean/objects clean/exec clean/docs clean/lint clean/debug
 .PHONY: clean
 
 clean/build:
 	@rm -rf ./$(BINDIR)/*
-
-clean/lib:
-	@bash ./scripts/libmagic.sh clean $(LIBDIR)/file $(LIBDIR)/$(BINDIR)/magic
-.PHONY: clean/lib
 
 clean/objects:
 	@rm -f ./$(SRCDIR)/*.o ./$(SRCDIR)/**/*.o
